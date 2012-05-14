@@ -1,0 +1,4 @@
+[base]
+profile: /home/jdukes/.mozilla/firefox/azidfjzx.Hack/
+preload: /home/jdukes/brsh_preload.py
+location: local
