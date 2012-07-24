@@ -15,6 +15,7 @@ from BeautifulSoup import BeautifulSoup
 from urllib2 import urlparse
 from urllib2 import quote as urlquote
 from urllib2 import unquote as urlunquote
+from codecs import register, CodecInfo
 
 
 from fuzzywuzzy import fuzz as fw #maybe this belongs elsewhere...
@@ -22,7 +23,8 @@ from fuzzywuzzy import fuzz as fw #maybe this belongs elsewhere...
 from selenium import webdriver, selenium
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
-from IPython.Shell import IPShellEmbed
+from IPython import embed
+
 
 #think about adding htmlunit for some tests
 
@@ -116,6 +118,24 @@ def init_browser(location="local"):
 location = location or raw_input('location (return for local)> ') #need to add port info
 browser = init_browser(location)
 
+def url_decode(input, errors='strict'):
+    output = urlunquote(input)
+    return (output, len(input))
+
+
+def url_encode(input, errors='strict'):
+    output = urlquote(input)
+    return (output, len(input))
+
+CODECS_IN_FILE={"url" : CodecInfo(name = 'url',
+                                  encode=url_encode,
+                                  decode=url_decode),
+                }
+def getregentry(name):
+    return CODECS_IN_FILE[name]
+register(getregentry)
+
+
 try:
     if preload:
         if os.path.exists(preload):
@@ -137,8 +157,10 @@ except Exception:
            " correct permissions")
     raise
 
-ipshell = IPShellEmbed(['-pi1','selenium \\# >>> '])
-ipshell("use the browser object to interface with the browser")
+
+embed()
+# ipshell = IPShellEmbed(['-pi1','selenium \\# >>> '])
+# ipshell("use the browser object to interface with the browser")
 
 try:
     browser.close()
