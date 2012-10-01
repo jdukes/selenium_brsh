@@ -159,8 +159,6 @@ except Exception:
 
 
 embed()
-# ipshell = IPShellEmbed(['-pi1','selenium \\# >>> '])
-# ipshell("use the browser object to interface with the browser")
 
 try:
     browser.close()
