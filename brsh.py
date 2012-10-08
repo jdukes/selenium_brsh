@@ -23,8 +23,10 @@ from fuzzywuzzy import fuzz as fw #maybe this belongs elsewhere...
 from selenium import webdriver, selenium
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
-from IPython import embed
 
+from IPython.frontend.terminal.embed import InteractiveShellEmbed
+#from IPython import embed
+from IPython.config.loader import Config
 
 #think about adding htmlunit for some tests
 
@@ -56,6 +58,7 @@ except ConfigParser.NoOptionError:
 
 location = config.get('base','location') if config.has_option('base', 'location') else None
 
+#these should all be moved to a seperate helper library
 def check_robots(url): #hum.....
     if not url[-1] == '/':
         url += '/' 
@@ -69,6 +72,22 @@ def check_robots(url): #hum.....
 def get_links():
     return ((a.text, a.get_attribute('href'))
             for a in browser.find_elements_by_css_selector('a'))
+
+#getOwnPropertyNames()
+def get_methods(obj):
+    r = browser.execute_script("""
+    function get_methods(obj){
+        var methods = [];
+        for (var m in obj) {
+            if (typeof obj[m] == "function") {
+                methods.push(m);
+            }
+        }
+        return methods.join(",");
+    }
+    return get_methods(" + obj + ");
+    """)
+    return r
 
 # def get_all_urls():
 #     re.search(browser re.DOTALL
@@ -158,7 +177,18 @@ except Exception:
     raise
 
 
-embed()
+cfg = Config()
+prompt_config = cfg.PromptManager
+prompt_config.in_template = 'In <[selenium] \\#>: '
+prompt_config.in2_template = '   .\\D.: '
+prompt_config.out_template = 'Out <[selenium] \\#>: '
+
+ipshell = InteractiveShellEmbed(config=cfg,
+                       banner1 = ('Dropping in to selenium shell. '
+                                  'To interact with the browser use '
+                                  'the "browser" object. '),
+                       exit_msg = 'closing browser.')
+ipshell()
 
 try:
     browser.close()
