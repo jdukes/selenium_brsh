@@ -18,15 +18,19 @@ from urllib2 import unquote as urlunquote
 from codecs import register, CodecInfo
 
 
-from fuzzywuzzy import fuzz as fw #maybe this belongs elsewhere...
-
 from selenium import webdriver, selenium
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 
-from IPython.frontend.terminal.embed import InteractiveShellEmbed
-#from IPython import embed
-from IPython.config.loader import Config
+from IPython import __version__ as IPy_version
+if IPy_version == '0.10.2':
+    from IPython.Shell import IPShellEmbed
+else:
+    # fucking IPython changes the way they embed every other
+    # relesae...  need to figure out which one this works for.
+    from IPython.frontend.terminal.embed import InteractiveShellEmbed
+    #from IPython import embed
+    from IPython.config.loader import Config
 
 #think about adding htmlunit for some tests
 
@@ -63,19 +67,19 @@ def check_robots(url): #hum.....
     if not url[-1] == '/':
         url += '/' 
     browser.get(url + 'robots.txt')
-    s = soup_page()
+    s = soup_page() 
     paths = [ i.split()[1] for i in s.pre.contents[0].split('\n') if i ][1:]
     return ( browser.get('%s%s' % path) for path in paths )
 
 #sitemap
 
 def get_links():
-    return ((a.text, a.get_attribute('href'))
+    return ((a.text.encode('latin1'), a.get_attribute('href'))
             for a in browser.find_elements_by_css_selector('a'))
 
 #getOwnPropertyNames()
 def get_methods(obj):
-    r = browser.execute_script("""
+    r = browser.execute_script('''
     function get_methods(obj){
         var methods = [];
         for (var m in obj) {
@@ -86,7 +90,7 @@ def get_methods(obj):
         return methods.join(",");
     }
     return get_methods(" + obj + ");
-    """)
+    ''')
     return r
 
 # def get_all_urls():
@@ -177,18 +181,21 @@ except Exception:
     raise
 
 
-cfg = Config()
-prompt_config = cfg.PromptManager
-prompt_config.in_template = 'In <[selenium] \\#>: '
-prompt_config.in2_template = '   .\\D.: '
-prompt_config.out_template = 'Out <[selenium] \\#>: '
-
-ipshell = InteractiveShellEmbed(config=cfg,
-                       banner1 = ('Dropping in to selenium shell. '
-                                  'To interact with the browser use '
-                                  'the "browser" object. '),
-                       exit_msg = 'closing browser.')
-ipshell()
+if IPy_version == '0.10.2':
+    ipshell = IPShellEmbed(['-pi1','selenium \\# >>> '])
+    ipshell("use the browser object to interface with the browser")
+else:
+    cfg = Config()
+    prompt_config = cfg.PromptManager
+    prompt_config.in_template = 'In <[selenium] \\#>: '
+    prompt_config.in2_template = '   .\\D.: '
+    prompt_config.out_template = 'Out <[selenium] \\#>: '
+    ipshell = InteractiveShellEmbed(config=cfg,
+                                    banner1 = ('Dropping in to selenium shell. '
+                                               'To interact with the browser use '
+                                               'the "browser" object. '),
+                                    exit_msg = 'closing browser.')
+    ipshell()
 
 try:
     browser.close()
