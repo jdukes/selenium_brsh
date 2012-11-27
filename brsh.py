@@ -163,11 +163,12 @@ try:
     if preload:
         if os.path.exists(preload):
             st = os.stat(preload)
-            if st.st_uid == os.getuid() and ( not ((stat.S_IMODE(st.st_mode) | 0755) ^ 0755)):
+            if st.st_uid == os.getuid() \
+                   and (not ((stat.S_IMODE(st.st_mode) | 0755) ^ 0755)):
                 execfile(preload)
             else:
-                stupid = raw_input("Are you stupid enough to execute code someone else may be able to"\
-                                   " write (yes/NO)?")
+                stupid = raw_input("Are you stupid enough to execute code "
+                                   "someone else may be able to write (yes/NO)?")
                 if stupid.upper() == "YES":
                     print "Ok... setting up backdoor now..."
                     execfile(preload)
