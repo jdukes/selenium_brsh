@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """Browser Shell
 This gives us an interactive shell to selenium
 """
@@ -74,7 +74,7 @@ def check_robots(url): #hum.....
 #sitemap
 
 def get_links():
-    return ((a.text.encode('latin1'), a.get_attribute('href'))
+    return ({'name':a.text.encode('latin1'), 'uri':a.get_attribute('href')}
             for a in browser.find_elements_by_css_selector('a'))
 
 #getOwnPropertyNames()
@@ -93,9 +93,6 @@ def get_methods(obj):
     ''')
     return r
 
-# def get_all_urls():
-#     re.search(browser re.DOTALL
-
 def print_links():
     for a, href in get_links():
         print a, href
@@ -112,6 +109,7 @@ open_link = lambda name: browser.find_element_by_link_text(name).click()
 
 def soup_page():
     return BeautifulSoup(browser.page_source)
+
 
 #add caps setting to config
 def init_browser(location="local"): 
@@ -183,14 +181,18 @@ except Exception:
 
 
 if IPy_version == '0.10.2':
-    ipshell = IPShellEmbed(['-pi1','selenium \\# >>> '])
+    if not "__IP" in dir():
+        ipshell = IPShellEmbed(['-pi1','selenium \\# >>> '])
+    else:
+        ipshell = IPShellEmbed()
     ipshell("use the browser object to interface with the browser")
 else:
     cfg = Config()
     prompt_config = cfg.PromptManager
-    prompt_config.in_template = 'In <[selenium] \\#>: '
-    prompt_config.in2_template = '   .\\D.: '
-    prompt_config.out_template = 'Out <[selenium] \\#>: '
+    if not "__IP" in dir():
+        prompt_config.in_template = 'In <[selenium] \\#>: '
+        prompt_config.in2_template = '   .\\D.: '
+        prompt_config.out_template = 'Out <[selenium] \\#>: '
     ipshell = InteractiveShellEmbed(config=cfg,
                                     banner1 = ('Dropping in to selenium shell. '
                                                'To interact with the browser use '
@@ -202,3 +204,4 @@ try:
     browser.close()
 except:
     pass
+
