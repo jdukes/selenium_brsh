@@ -11,16 +11,22 @@ import stat
 from time import sleep
 import ConfigParser
 
+from binascii import b2a_hex
+from os import urandom
+
 from BeautifulSoup import BeautifulSoup
 from urllib2 import urlparse
 from urllib2 import quote as urlquote
 from urllib2 import unquote as urlunquote
-from codecs import register, CodecInfo
-
+from codecs import register as _register
+from codecs import CodecInfo as _CodecInfo
 
 from selenium import webdriver, selenium
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 from IPython import __version__ as IPy_version
 if IPy_version == '0.10.2':
@@ -36,12 +42,13 @@ else:
 
 config = ConfigParser.ConfigParser()
 cfg_search_paths = [os.path.expanduser('~/.brsh.cfg'), './brsh.cfg']
-for f in cfg_search_paths:
-    r = config.read(f)
+for filename in cfg_search_paths:
+    r = config.read(filename)
     if r:
         break
 
 assert r, "config not found in locations {0}".format(cfg_search_paths)
+del(r)
 
 assert config.has_section('base'), ("No [base] found in conifguration. "
                                     "Verify your config based on the "
@@ -93,23 +100,35 @@ def get_methods(obj):
     ''')
     return r
 
+#def wait
+#http://selenium-python.readthedocs.org/en/latest/waits.html
+
+def wait_for_selector(selector, time=10):
+    element = WebDriverWait(browser, time).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+    )
+    return element
+
+def rand_str(length):
+    return b2a_hex(urandom(int(length/2)+1)).decode('ascii')[:length]
+
 def print_links():
-    for a, href in get_links():
-        print a, href
+    for link in get_links():
+        print link["name"], link["uir"]
 
 def print_link_titles():
-    for a, href in get_links():
-        print a
+    for link in get_links():
+        print link["name"]
 
 def print_link_locn():
-    for a, href in get_links():
-        print href
+    for link in get_links():
+        print link["uri"]
 
 open_link = lambda name: browser.find_element_by_link_text(name).click()
 
-def soup_page():
-    return BeautifulSoup(browser.page_source)
-
+def soup_page(data=None):
+    data = data or browser.page_source
+    return BeautifulSoup(data)
 
 #add caps setting to config
 def init_browser(location="local"): 
@@ -148,14 +167,19 @@ def url_encode(input, errors='strict'):
     output = urlquote(input)
     return (output, len(input))
 
-CODECS_IN_FILE={"url" : CodecInfo(name = 'url',
+CODECS_IN_FILE={"url" : _CodecInfo(name = 'url',
                                   encode=url_encode,
                                   decode=url_decode),
                 }
 def getregentry(name):
     return CODECS_IN_FILE[name]
-register(getregentry)
+_register(getregentry)
 
+def reload_config():
+    execfile(preload)
+
+def accept():
+    browser.switch_to.alert.accept()
 
 try:
     if preload:
